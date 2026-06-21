@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Waifu</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <main class="app">
+    <section class="top-panel">
+      <div class="hello">
+        <strong id="userStatus">Hello</strong>
+        <span>Choose a character</span>
+      </div>
+    </section>
+
+    <section class="toolbar" aria-label="Character filters">
+      <label class="search" aria-label="Search character">
+        <input id="searchInput" type="search" placeholder="Search character">
+      </label>
+    </section>
+
+    <section class="grid" id="girlsGrid">
+      <div class="empty">Loading characters...</div>
+    </section>
+  </main>
+
+  <section class="detail" id="detailView" aria-hidden="true">
+    <div class="detail-shell" role="dialog" aria-modal="true" aria-labelledby="detailName">
+      <button class="detail-close" type="button" id="detailClose" aria-label="Close">x</button>
+      <div class="detail-photo" id="detailPhoto"></div>
+      <div class="detail-content">
+        <div class="detail-meta">
+          <span id="detailType"></span>
+          <span id="detailAge"></span>
+        </div>
+        <h2 id="detailName">Character</h2>
+        <p class="detail-role" id="detailRole"></p>
+        <p class="detail-quote" id="detailDescription"></p>
+        <button class="choose-button" type="button" id="detailChoose">Choose character</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
