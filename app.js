@@ -3,6 +3,9 @@ const tg = window.Telegram?.WebApp;
 if (tg) {
     tg.ready();
     tg.expand();
+    console.log('✅ Telegram Web App инициализирован');
+} else {
+    console.warn('⚠️ Открыто не в Telegram Web App - режим тестирования');
 }
 
 const user = tg?.initDataUnsafe?.user;
@@ -86,14 +89,48 @@ function renderSubscriptions() {
 
 function buySubscription(subId) {
     if (!tg) {
-        alert('Открой Mini App в Telegram');
+        alert('❌ Открой Mini App в Telegram');
         return;
     }
+    
+    console.log('💎 Запрос на покупку подписки:', subId);
+    
+    // Находим подписку в списке
+    const subscription = SUBSCRIPTIONS.find(sub => sub.id === subId);
+    if (!subscription) {
+        alert('❌ Подписка не найдена');
+        return;
+    }
+    
+    // Показываем уведомление
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = `Обработка ${subscription.title}...`;
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; 
+        background: #2196F3; color: white; padding: 12px 20px;
+        border-radius: 8px; z-index: 9999; font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            document.body.removeChild(notification);
+        }
+    }, 2000);
+    
     try {
-        tg.sendData(JSON.stringify({ action: 'buy_subscription', sub_id: subId }));
-        tg.close();
+        tg.sendData(JSON.stringify({ 
+            action: 'buy_subscription', 
+            sub_id: subId,
+            title: subscription.title,
+            price: subscription.price
+        }));
+        console.log('✅ Запрос на подписку отправлен');
     } catch (error) {
-        alert('Ошибка');
+        console.error('❌ Ошибка отправки:', error);
+        alert('❌ Ошибка: ' + error.message);
     }
 }
 
@@ -102,19 +139,40 @@ function buySubscription(subId) {
 // =========================================================
 
 function sendToBot(data) {
-    if (!tg) {
-        alert('Открой Mini App в Telegram');
+    // Проверяем, открыто ли приложение в Telegram
+    if (!window.Telegram || !window.Telegram.WebApp) {
+        console.warn('⚠️ Мини-приложение открыто не в Telegram');
+        alert('❌ Открой это приложение в Telegram боте для корректной работы');
         return false;
     }
+    
+    if (!tg) {
+        console.error('❌ Telegram Web App не инициализирован');
+        alert('❌ Ошибка инициализации приложения. Попробуйте перезагрузить.');
+        return false;
+    }
+    
     try {
         const jsonData = JSON.stringify(data);
-        console.log('📤 Отправка:', jsonData);
+        console.log('📤 Отправка данных в бота:', jsonData);
+        
+        // Проверяем доступность метода sendData
+        if (typeof tg.sendData !== 'function') {
+            console.error('❌ Метод tg.sendData недоступен');
+            alert('❌ Функция отправки данных недоступна');
+            return false;
+        }
+        
+        // Отправляем данные
         tg.sendData(jsonData);
-        tg.close();
+        console.log('✅ Данные успешно отправлены');
+        
+        // Telegram может автоматически закрыть приложение после отправки,
+        // поэтому мы не вызываем tg.close()
         return true;
     } catch (error) {
-        console.error('❌ Ошибка:', error);
-        alert('Ошибка: ' + error.message);
+        console.error('❌ Ошибка отправки данных:', error);
+        alert('❌ Ошибка отправки: ' + error.message);
         return false;
     }
 }
@@ -124,12 +182,43 @@ function sendToBot(data) {
 // =========================================================
 
 function selectGirl(rawGirl) {
-    if (!rawGirl) {
-        alert('Персонаж не найден');
+    if (!rawGirl || !rawGirl.id) {
+        alert('❌ Персонаж не найден');
         return;
     }
-    console.log('👤 Выбран:', rawGirl.id, rawGirl.name);
-    sendToBot({ action: 'select_girl', girl_id: rawGirl.id });
+    
+    console.log('👤 Выбран персонаж:', rawGirl.id, rawGirl.name);
+    
+    // Показываем уведомление о выборе
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = `Выбор персонажа ${rawGirl.name}...`;
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; 
+        background: #4CAF50; color: white; padding: 12px 20px;
+        border-radius: 8px; z-index: 9999; font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    `;
+    document.body.appendChild(notification);
+    
+    // Убираем уведомление через 2 секунды
+    setTimeout(() => {
+        if (notification.parentNode) {
+            document.body.removeChild(notification);
+        }
+    }, 2000);
+    
+    // Отправляем данные в бота
+    const success = sendToBot({ action: 'select_girl', girl_id: rawGirl.id });
+    
+    if (success) {
+        console.log('✅ Данные отправлены боту');
+        // Мягкое закрытие детального просмотра
+        closeDetail();
+    } else {
+        console.error('❌ Ошибка отправки данных');
+        alert('Не удалось отправить данные. Попробуйте снова.');
+    }
 }
 
 // =========================================================
