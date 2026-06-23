@@ -35,12 +35,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-
         const tab = this.dataset.tab;
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         const target = document.getElementById(`tab-${tab}`);
         if (target) target.classList.add('active');
-
         if (tab === 'subscriptions') {
             renderSubscriptions();
         }
@@ -100,29 +98,42 @@ function buySubscription(subId) {
 }
 
 // =========================================================
-// ВЫБОР ПЕРСОНАЖА ЧЕРЕЗ ССЫЛКУ
+// ОТПРАВКА ДАННЫХ В БОТА
 // =========================================================
 
-function selectGirl(rawGirl) {
-    if (!rawGirl) return;
-    
-    // Имя бота (замени на своё)
-    const botUsername = "Svinina_bot";
-    const url = `https://t.me/${botUsername}?start=girl_${rawGirl.id}`;
-    
-    console.log('🔗 Выбор персонажа:', rawGirl.id, rawGirl.name);
-    console.log('🔗 Ссылка:', url);
-    
-    if (tg) {
-        tg.openTelegramLink(url);
-        setTimeout(() => tg.close(), 500);
-    } else {
-        window.open(url, '_blank');
+function sendToBot(data) {
+    if (!tg) {
+        alert('Открой Mini App в Telegram');
+        return false;
+    }
+    try {
+        const jsonData = JSON.stringify(data);
+        console.log('📤 Отправка:', jsonData);
+        tg.sendData(jsonData);
+        tg.close();
+        return true;
+    } catch (error) {
+        console.error('❌ Ошибка:', error);
+        alert('Ошибка: ' + error.message);
+        return false;
     }
 }
 
 // =========================================================
-// ОСТАЛЬНЫЕ ФУНКЦИИ (escapeHtml, renderGirls, openDetail и т.д.)
+// ВЫБОР ПЕРСОНАЖА
+// =========================================================
+
+function selectGirl(rawGirl) {
+    if (!rawGirl) {
+        alert('Персонаж не найден');
+        return;
+    }
+    console.log('👤 Выбран:', rawGirl.id, rawGirl.name);
+    sendToBot({ action: 'select_girl', girl_id: rawGirl.id });
+}
+
+// =========================================================
+// ОСТАЛЬНЫЕ ФУНКЦИИ
 // =========================================================
 
 function escapeHtml(value) {
