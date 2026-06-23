@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,24 +12,41 @@
     <section class="top-panel">
       <div class="hello">
         <strong id="userStatus">Hello</strong>
-        <span>Choose a character</span>
+        <span>Выбери персонажа</span>
       </div>
     </section>
 
-    <section class="toolbar" aria-label="Character filters">
-      <label class="search" aria-label="Search character">
-        <input id="searchInput" type="search" placeholder="Search character">
-      </label>
+    <!-- Вкладки -->
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="characters">👥 Персонажи</button>
+      <button class="tab-btn" data-tab="subscriptions">💎 Подписки</button>
+    </nav>
+
+    <!-- Вкладка: Персонажи -->
+    <section id="tab-characters" class="tab-content active">
+      <section class="toolbar" aria-label="Character filters">
+        <label class="search" aria-label="Search character">
+          <input id="searchInput" type="search" placeholder="Поиск персонажа">
+        </label>
+      </section>
+
+      <section class="grid" id="girlsGrid">
+        <div class="empty">Загрузка персонажей...</div>
+      </section>
     </section>
 
-    <section class="grid" id="girlsGrid">
-      <div class="empty">Loading characters...</div>
+    <!-- Вкладка: Подписки -->
+    <section id="tab-subscriptions" class="tab-content">
+      <section class="subscriptions-list" id="subscriptionsList">
+        <div class="empty">Загрузка подписок...</div>
+      </section>
     </section>
   </main>
 
+  <!-- Детальный просмотр -->
   <section class="detail" id="detailView" aria-hidden="true">
     <div class="detail-shell" role="dialog" aria-modal="true" aria-labelledby="detailName">
-      <button class="detail-close" type="button" id="detailClose" aria-label="Close">x</button>
+      <button class="detail-close" type="button" id="detailClose" aria-label="Close">✕</button>
       <div class="detail-photo" id="detailPhoto"></div>
       <div class="detail-content">
         <div class="detail-meta">
@@ -39,7 +56,7 @@
         <h2 id="detailName">Character</h2>
         <p class="detail-role" id="detailRole"></p>
         <p class="detail-quote" id="detailDescription"></p>
-        <button class="choose-button" type="button" id="detailChoose">Choose character</button>
+        <button class="choose-button" type="button" id="detailChoose">Выбрать персонажа</button>
       </div>
     </div>
   </section>
