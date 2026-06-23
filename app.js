@@ -48,7 +48,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // =========================================================
-// ПОДПИСКИ (обновлённые цены)
+// ПОДПИСКИ
 // =========================================================
 
 const SUBSCRIPTIONS = [
@@ -59,12 +59,10 @@ const SUBSCRIPTIONS = [
 
 function renderSubscriptions() {
     if (!subscriptionsListEl) return;
-
     if (!SUBSCRIPTIONS.length) {
         subscriptionsListEl.innerHTML = '<div class="empty">Подписки временно недоступны.</div>';
         return;
     }
-
     subscriptionsListEl.innerHTML = '';
     SUBSCRIPTIONS.forEach(sub => {
         const card = document.createElement('div');
@@ -79,13 +77,11 @@ function renderSubscriptions() {
                 <button class="sub-btn" data-sub-id="${escapeHtml(sub.id)}">Купить</button>
             </div>
         `;
-
         const btn = card.querySelector('.sub-btn');
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             buySubscription(sub.id);
         });
-
         subscriptionsListEl.appendChild(card);
     });
 }
@@ -95,76 +91,38 @@ function buySubscription(subId) {
         alert('Открой Mini App в Telegram');
         return;
     }
-
     try {
-        const data = JSON.stringify({
-            action: 'buy_subscription',
-            sub_id: subId
-        });
-        console.log('📤 Покупка подписки:', data);
-        tg.sendData(data);
+        tg.sendData(JSON.stringify({ action: 'buy_subscription', sub_id: subId }));
         tg.close();
     } catch (error) {
-        console.error('❌ Ошибка:', error);
-        alert('Ошибка при покупке. Попробуй ещё раз.');
+        alert('Ошибка');
     }
 }
 
 // =========================================================
-// ОТПРАВКА ДАННЫХ В БОТА (исправленная)
-// =========================================================
-
-function sendToBot(data) {
-    if (!tg) {
-        alert('Открой Mini App в Telegram');
-        return false;
-    }
-    
-    try {
-        const jsonData = JSON.stringify(data);
-        console.log('📤 Отправка в бота:', jsonData);
-        
-        // Прямой вызов через WebApp
-        tg.sendData(jsonData);
-        
-        // Закрываем приложение через 200мс (даём время на отправку)
-        setTimeout(() => {
-            tg.close();
-        }, 200);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Ошибка отправки:', error);
-        alert('Ошибка отправки: ' + error.message);
-        return false;
-    }
-}
-
-// =========================================================
-// ВЫБОР ПЕРСОНАЖА
+// ВЫБОР ПЕРСОНАЖА ЧЕРЕЗ ССЫЛКУ
 // =========================================================
 
 function selectGirl(rawGirl) {
-    if (!rawGirl) {
-        alert('Персонаж не найден');
-        return;
-    }
+    if (!rawGirl) return;
     
-    console.log('👤 Выбран персонаж:', rawGirl.id, rawGirl.name);
-    console.log('📤 Отправка данных в бот...');
+    // Имя бота (замени на своё)
+    const botUsername = "Svinina_bot";
+    const url = `https://t.me/${botUsername}?start=girl_${rawGirl.id}`;
     
-    const result = sendToBot({
-        action: "select_girl",
-        girl_id: rawGirl.id
-    });
+    console.log('🔗 Выбор персонажа:', rawGirl.id, rawGirl.name);
+    console.log('🔗 Ссылка:', url);
     
-    if (!result) {
-        alert('Не удалось отправить данные в бот. Проверь консоль.');
+    if (tg) {
+        tg.openTelegramLink(url);
+        setTimeout(() => tg.close(), 500);
+    } else {
+        window.open(url, '_blank');
     }
 }
 
 // =========================================================
-// ESCAPE HTML
+// ОСТАЛЬНЫЕ ФУНКЦИИ (escapeHtml, renderGirls, openDetail и т.д.)
 // =========================================================
 
 function escapeHtml(value) {
@@ -188,10 +146,7 @@ function cleanDescription(text, maxLines = 2) {
 
 function getCharacterQuote(girl) {
     const description = girl?.description || "";
-    const lines = description
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
+    const lines = description.split("\n").map(l => l.trim()).filter(Boolean);
     return lines.length ? lines[lines.length - 1] : cleanDescription(girl?.role || description, 2);
 }
 
@@ -211,28 +166,21 @@ function normalizeGirl(girl) {
     };
 }
 
-// =========================================================
-// РЕНДЕР ПЕРСОНАЖЕЙ
-// =========================================================
-
 function renderGirls(girls) {
     if (!gridEl) return;
     if (!girls || !girls.length) {
         gridEl.innerHTML = '<div class="empty">Персонажи не найдены.</div>';
         return;
     }
-    
     gridEl.innerHTML = "";
     girls.forEach((rawGirl) => {
         const girl = normalizeGirl(rawGirl);
         const button = document.createElement("button");
         button.className = "card";
         button.type = "button";
-        
         const coverHtml = girl.photo_url
             ? `<div class="cover"><img src="${escapeHtml(girl.photo_url)}" alt=""></div>`
             : `<div class="fallback">${escapeHtml((girl.name || "?").slice(0, 1))}</div>`;
-        
         button.innerHTML = `
             ${coverHtml}
             ${girl.type ? `<span class="badge">${escapeHtml(girl.type)}</span>` : ""}
@@ -243,36 +191,24 @@ function renderGirls(girls) {
                 </div>
             </div>
         `;
-        
-        button.addEventListener("click", () => {
-            console.log('🖱️ Клик по карточке:', girl.id);
-            openDetail(rawGirl);
-        });
-        
+        button.addEventListener("click", () => openDetail(rawGirl));
         gridEl.appendChild(button);
     });
 }
-
-// =========================================================
-// ДЕТАЛЬНЫЙ ПРОСМОТР
-// =========================================================
 
 function openDetail(rawGirl) {
     const girl = normalizeGirl(rawGirl);
     currentGirl = rawGirl;
     if (!detailView) return;
-    
     detailPhoto.innerHTML = girl.photo_url
         ? `<img src="${escapeHtml(girl.photo_url)}" alt="${escapeHtml(girl.name || "Character")}">`
         : `<div class="fallback">${escapeHtml((girl.name || "?").slice(0, 1))}</div>`;
-    
     detailType.textContent = girl.type || "";
     detailAge.textContent = girlAge(girl);
     detailName.textContent = girl.name || "Character";
     detailRole.textContent = girl.role || "";
     detailDescription.textContent = getCharacterQuote(girl);
     detailChoose.textContent = `✅ Выбрать ${girl.name || "персонажа"}`;
-    
     detailView.classList.add("open");
     detailView.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -285,35 +221,20 @@ function closeDetail() {
     document.body.style.overflow = "";
 }
 
-// =========================================================
-// ФИЛЬТРЫ
-// =========================================================
-
 function applyFilters() {
     const query = (searchInput?.value || "").trim().toLowerCase();
     const filtered = girlsCache.filter((girl) => {
         const haystack = [
-            girl.name,
-            girl.name_en,
-            girl.role,
-            girl.role_en,
-            girl.description,
-            girl.description_en,
-            girl.type,
-            girl.type_en,
+            girl.name, girl.name_en, girl.role, girl.role_en,
+            girl.description, girl.description_en, girl.type, girl.type_en
         ].join(" ").toLowerCase();
         return !query || haystack.includes(query);
     });
     renderGirls(filtered);
 }
 
-// =========================================================
-// ЗАГРУЗКА ДАННЫХ
-// =========================================================
-
 function loadGirls() {
     girlsCache = window.STATIC_GIRLS || [];
-    console.log('📦 Загружено персонажей:', girlsCache.length);
     renderGirls(girlsCache);
 }
 
@@ -322,12 +243,7 @@ function loadGirls() {
 // =========================================================
 
 detailChoose?.addEventListener("click", () => {
-    console.log('🖱️ Клик по кнопке "Выбрать"');
-    if (currentGirl) {
-        selectGirl(currentGirl);
-    } else {
-        alert('Персонаж не выбран');
-    }
+    if (currentGirl) selectGirl(currentGirl);
 });
 
 detailClose?.addEventListener("click", closeDetail);
@@ -345,5 +261,4 @@ loadGirls();
 renderSubscriptions();
 
 console.log('✅ Mini App загружен');
-console.log('📱 Telegram WebApp доступен:', !!tg);
-console.log('🔑 User:', user);
+console.log('📱 Бот: Svinina_bot');
