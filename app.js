@@ -48,11 +48,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // =========================================================
-// ПОДПИСКИ
+// ПОДПИСКИ (обновлённые цены)
 // =========================================================
 
 const SUBSCRIPTIONS = [
-    { id: 'sub_7', title: 'Подписка 7 дней', desc: 'Безлимитное общение на 7 дней', price: '600⭐' },
+    { id: 'sub_7', title: 'Подписка 7 дней', desc: 'Безлимитное общение на 7 дней', price: '700⭐' },
     { id: 'sub_30', title: 'Подписка 30 дней', desc: 'Безлимитное общение на 30 дней', price: '2000⭐' },
     { id: 'sub_60', title: 'Подписка 60 дней', desc: 'Максимальная экономия', price: '4000⭐' }
 ];
@@ -91,24 +91,27 @@ function renderSubscriptions() {
 }
 
 function buySubscription(subId) {
-    if (!tg?.sendData) {
+    if (!tg) {
         alert('Открой Mini App в Telegram');
         return;
     }
 
     try {
-        tg.sendData(JSON.stringify({
+        const data = JSON.stringify({
             action: 'buy_subscription',
             sub_id: subId
-        }));
+        });
+        console.log('📤 Покупка подписки:', data);
+        tg.sendData(data);
         tg.close();
     } catch (error) {
+        console.error('❌ Ошибка:', error);
         alert('Ошибка при покупке. Попробуй ещё раз.');
     }
 }
 
 // =========================================================
-// ОТПРАВКА ДАННЫХ В БОТА
+// ОТПРАВКА ДАННЫХ В БОТА (исправленная)
 // =========================================================
 
 function sendToBot(data) {
@@ -120,8 +123,15 @@ function sendToBot(data) {
     try {
         const jsonData = JSON.stringify(data);
         console.log('📤 Отправка в бота:', jsonData);
+        
+        // Прямой вызов через WebApp
         tg.sendData(jsonData);
-        tg.close();
+        
+        // Закрываем приложение через 200мс (даём время на отправку)
+        setTimeout(() => {
+            tg.close();
+        }, 200);
+        
         return true;
     } catch (error) {
         console.error('❌ Ошибка отправки:', error);
@@ -141,11 +151,16 @@ function selectGirl(rawGirl) {
     }
     
     console.log('👤 Выбран персонаж:', rawGirl.id, rawGirl.name);
+    console.log('📤 Отправка данных в бот...');
     
-    sendToBot({
+    const result = sendToBot({
         action: "select_girl",
         girl_id: rawGirl.id
     });
+    
+    if (!result) {
+        alert('Не удалось отправить данные в бот. Проверь консоль.');
+    }
 }
 
 // =========================================================
@@ -229,7 +244,6 @@ function renderGirls(girls) {
             </div>
         `;
         
-        // ВАЖНО: открываем детальный просмотр, а не выбираем сразу
         button.addEventListener("click", () => {
             console.log('🖱️ Клик по карточке:', girl.id);
             openDetail(rawGirl);
@@ -311,6 +325,8 @@ detailChoose?.addEventListener("click", () => {
     console.log('🖱️ Клик по кнопке "Выбрать"');
     if (currentGirl) {
         selectGirl(currentGirl);
+    } else {
+        alert('Персонаж не выбран');
     }
 });
 
@@ -330,3 +346,4 @@ renderSubscriptions();
 
 console.log('✅ Mini App загружен');
 console.log('📱 Telegram WebApp доступен:', !!tg);
+console.log('🔑 User:', user);
