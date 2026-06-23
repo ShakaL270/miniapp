@@ -18,12 +18,93 @@ const detailRole = document.getElementById("detailRole");
 const detailDescription = document.getElementById("detailDescription");
 const detailChoose = document.getElementById("detailChoose");
 const detailClose = document.getElementById("detailClose");
+const subscriptionsListEl = document.getElementById("subscriptionsList");
 
 let girlsCache = [];
 let currentGirl = null;
 
 if (statusEl) {
     statusEl.textContent = user?.first_name ? `Hello ${user.first_name}` : "Hello Player";
+}
+
+// =========================================================
+// ВКЛАДКИ
+// =========================================================
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const tab = this.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById(`tab-${tab}`);
+        if (target) target.classList.add('active');
+
+        if (tab === 'subscriptions') {
+            renderSubscriptions();
+        }
+    });
+});
+
+// =========================================================
+// ПОДПИСКИ
+// =========================================================
+
+const SUBSCRIPTIONS = [
+    { id: 'sub_7', title: 'Подписка 7 дней', desc: 'Безлимитное общение на 7 дней', price: '600⭐' },
+    { id: 'sub_30', title: 'Подписка 30 дней', desc: 'Безлимитное общение на 30 дней', price: '2000⭐' },
+    { id: 'sub_60', title: 'Подписка 60 дней', desc: 'Максимальная экономия', price: '4000⭐' }
+];
+
+function renderSubscriptions() {
+    if (!subscriptionsListEl) return;
+
+    if (!SUBSCRIPTIONS.length) {
+        subscriptionsListEl.innerHTML = '<div class="empty">Подписки временно недоступны.</div>';
+        return;
+    }
+
+    subscriptionsListEl.innerHTML = '';
+    SUBSCRIPTIONS.forEach(sub => {
+        const card = document.createElement('div');
+        card.className = 'sub-card';
+        card.innerHTML = `
+            <div class="sub-info">
+                <div class="sub-title">${escapeHtml(sub.title)}</div>
+                <div class="sub-desc">${escapeHtml(sub.desc)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span class="sub-price">${escapeHtml(sub.price)}</span>
+                <button class="sub-btn" data-sub-id="${escapeHtml(sub.id)}">Купить</button>
+            </div>
+        `;
+
+        const btn = card.querySelector('.sub-btn');
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            buySubscription(sub.id);
+        });
+
+        subscriptionsListEl.appendChild(card);
+    });
+}
+
+function buySubscription(subId) {
+    if (!tg?.sendData) {
+        alert('Открой Mini App в Telegram');
+        return;
+    }
+
+    try {
+        tg.sendData(JSON.stringify({
+            action: 'buy_subscription',
+            sub_id: subId
+        }));
+        tg.close();
+    } catch (error) {
+        alert('Ошибка при покупке. Попробуй ещё раз.');
+    }
 }
 
 // =========================================================
@@ -148,10 +229,10 @@ function renderGirls(girls) {
             </div>
         `;
         
-        // При клике сразу выбираем персонажа
+        // ВАЖНО: открываем детальный просмотр, а не выбираем сразу
         button.addEventListener("click", () => {
             console.log('🖱️ Клик по карточке:', girl.id);
-            selectGirl(rawGirl);
+            openDetail(rawGirl);
         });
         
         gridEl.appendChild(button);
@@ -245,8 +326,7 @@ searchInput?.addEventListener("input", applyFilters);
 // =========================================================
 
 loadGirls();
+renderSubscriptions();
 
-// Вывод в консоль для отладки
 console.log('✅ Mini App загружен');
 console.log('📱 Telegram WebApp доступен:', !!tg);
-console.log('🔑 INIT_DATA_UNSAFE:', tg?.initDataUnsafe);
