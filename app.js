@@ -1,11 +1,50 @@
 const tg = window.Telegram?.WebApp;
 
+// Создаем элемент для отладки
+const debugPanel = document.createElement('div');
+debugPanel.id = 'debug-panel';
+debugPanel.style.cssText = `
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    color: #0f0;
+    padding: 10px;
+    font-size: 11px;
+    font-family: monospace;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 10000;
+    display: none;
+`;
+document.body.appendChild(debugPanel);
+
+function debugLog(message, color = '#0f0') {
+    console.log(message);
+    const line = document.createElement('div');
+    line.style.color = color;
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    debugPanel.appendChild(line);
+    debugPanel.style.display = 'block';
+    debugPanel.scrollTop = debugPanel.scrollHeight;
+}
+
 if (tg) {
     tg.ready();
     tg.expand();
-    console.log('✅ Telegram Web App инициализирован');
+    tg.enableClosingConfirmation();
+    debugLog('✅ Telegram Web App инициализирован');
+    debugLog(`Platform: ${tg.platform}`);
+    debugLog(`Version: ${tg.version}`);
+    debugLog(`sendData: ${typeof tg.sendData}`);
+    debugLog(`openTelegramLink: ${typeof tg.openTelegramLink}`);
+    debugLog(`initData: ${tg.initData ? '✅ есть' : '❌ нет'}`);
+    if (tg.initDataUnsafe?.user) {
+        debugLog(`User: ${tg.initDataUnsafe.user.first_name} (${tg.initDataUnsafe.user.id})`);
+    }
 } else {
-    console.warn('⚠️ Открыто не в Telegram Web App - режим тестирования');
+    debugLog('⚠️ Открыто не в Telegram Web App', '#ff0');
 }
 
 const user = tg?.initDataUnsafe?.user;
@@ -95,135 +134,140 @@ function buySubscription(subId) {
     
     console.log('💎 Запрос на покупку подписки:', subId);
     
-    // Находим подписку в списке
     const subscription = SUBSCRIPTIONS.find(sub => sub.id === subId);
     if (!subscription) {
         alert('❌ Подписка не найдена');
         return;
     }
     
-    // Показываем уведомление
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = `Обработка ${subscription.title}...`;
-    notification.style.cssText = `
-        position: fixed; top: 20px; right: 20px; 
-        background: #2196F3; color: white; padding: 12px 20px;
-        border-radius: 8px; z-index: 9999; font-weight: bold;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    `;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        if (notification.parentNode) {
-            document.body.removeChild(notification);
-        }
-    }, 2000);
+    showNotification(`Обработка ${subscription.title}...`, '#2196F3');
     
     try {
-        tg.sendData(JSON.stringify({ 
+        // Вариант 1: Попытка отправить через sendData
+        const payload = JSON.stringify({ 
             action: 'buy_subscription', 
             sub_id: subId,
             title: subscription.title,
             price: subscription.price
-        }));
-        console.log('✅ Запрос на подписку отправлен');
-    } catch (error) {
-        console.error('❌ Ошибка отправки:', error);
-        alert('❌ Ошибка: ' + error.message);
-    }
-}
-
-// =========================================================
-// ОТПРАВКА ДАННЫХ В БОТА
-// =========================================================
-
-function sendToBot(data) {
-    // Проверяем, открыто ли приложение в Telegram
-    if (!window.Telegram || !window.Telegram.WebApp) {
-        console.warn('⚠️ Мини-приложение открыто не в Telegram');
-        alert('❌ Открой это приложение в Telegram боте для корректной работы');
-        return false;
-    }
-    
-    if (!tg) {
-        console.error('❌ Telegram Web App не инициализирован');
-        alert('❌ Ошибка инициализации приложения. Попробуйте перезагрузить.');
-        return false;
-    }
-    
-    try {
-        const jsonData = JSON.stringify(data);
-        console.log('📤 Отправка данных в бота:', jsonData);
+        });
         
-        // Проверяем доступность метода sendData
-        if (typeof tg.sendData !== 'function') {
-            console.error('❌ Метод tg.sendData недоступен');
-            alert('❌ Функция отправки данных недоступна');
-            return false;
+        console.log('📤 Попытка sendData:', payload);
+        
+        if (typeof tg.sendData === 'function') {
+            console.log('✅ sendData доступен, отправляем...');
+            tg.sendData(payload);
+            console.log('✅ sendData вызван');
+        } else {
+            console.warn('⚠️ sendData недоступен, используем deep link');
+            // Вариант 2: Deep link как fallback
+            const botUsername = 'Svinina_bot';
+            const deepLink = `https://t.me/${botUsername}?start=sub_${subId}`;
+            console.log('📤 Открываем deep link:', deepLink);
+            tg.openTelegramLink(deepLink);
         }
-        
-        // Отправляем данные
-        tg.sendData(jsonData);
-        console.log('✅ Данные успешно отправлены');
-        
-        // Telegram может автоматически закрыть приложение после отправки,
-        // поэтому мы не вызываем tg.close()
-        return true;
     } catch (error) {
-        console.error('❌ Ошибка отправки данных:', error);
-        alert('❌ Ошибка отправки: ' + error.message);
-        return false;
+        console.error('❌ Ошибка:', error);
+        // Вариант 3: Deep link при ошибке
+        try {
+            const botUsername = 'Svinina_bot';
+            const deepLink = `https://t.me/${botUsername}?start=sub_${subId}`;
+            console.log('📤 Fallback: открываем deep link:', deepLink);
+            tg.openTelegramLink(deepLink);
+        } catch (linkError) {
+            console.error('❌ Ошибка deep link:', linkError);
+            alert('❌ Ошибка: ' + linkError.message);
+        }
     }
 }
 
-// =========================================================
-// ВЫБОР ПЕРСОНАЖА
-// =========================================================
+
 
 function selectGirl(rawGirl) {
     if (!rawGirl || !rawGirl.id) {
+        debugLog('❌ Персонаж не найден', '#f00');
         alert('❌ Персонаж не найден');
         return;
     }
     
-    console.log('👤 Выбран персонаж:', rawGirl.id, rawGirl.name);
+    debugLog(`👤 Выбран персонаж: ${rawGirl.id} (${rawGirl.name})`);
     
-    // Показываем уведомление о выборе
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = `Выбор персонажа ${rawGirl.name}...`;
-    notification.style.cssText = `
-        position: fixed; top: 20px; right: 20px; 
-        background: #4CAF50; color: white; padding: 12px 20px;
-        border-radius: 8px; z-index: 9999; font-weight: bold;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    `;
-    document.body.appendChild(notification);
+    if (!tg) {
+        debugLog('❌ Telegram Web App не инициализирован', '#f00');
+        alert('❌ Telegram Web App не инициализирован');
+        return;
+    }
     
-    // Убираем уведомление через 2 секунды
-    setTimeout(() => {
-        if (notification.parentNode) {
-            document.body.removeChild(notification);
+    showNotification(`Выбор персонажа ${rawGirl.name}...`, '#4CAF50');
+    
+    try {
+        const payload = JSON.stringify({ 
+            action: 'select_girl', 
+            girl_id: rawGirl.id,
+            girl_name: rawGirl.name
+        });
+        
+        debugLog(`📤 Payload: ${payload}`, '#0ff');
+        
+        if (typeof tg.sendData === 'function') {
+            debugLog('✅ Используем sendData()');
+            tg.sendData(payload);
+            debugLog('✅ sendData() вызван, ожидание закрытия...');
+        } else {
+            debugLog('⚠️ sendData недоступен, используем deep link', '#ff0');
+            const botUsername = 'Svinina_bot';
+            const deepLink = `https://t.me/${botUsername}?start=select_${rawGirl.id}`;
+            debugLog(`🔗 Deep link: ${deepLink}`, '#0ff');
+            tg.openTelegramLink(deepLink);
+            debugLog('✅ openTelegramLink() вызван');
         }
-    }, 2000);
-    
-    // Отправляем данные в бота
-    const success = sendToBot({ action: 'select_girl', girl_id: rawGirl.id });
-    
-    if (success) {
-        console.log('✅ Данные отправлены боту');
-        // Мягкое закрытие детального просмотра
+        
         closeDetail();
-    } else {
-        console.error('❌ Ошибка отправки данных');
-        alert('Не удалось отправить данные. Попробуйте снова.');
+    } catch (error) {
+        debugLog(`❌ Ошибка: ${error.message}`, '#f00');
+        console.error('❌ Ошибка:', error);
+        
+        try {
+            debugLog('🔄 Fallback: пробуем deep link', '#ff0');
+            const botUsername = 'Svinina_bot';
+            const deepLink = `https://t.me/${botUsername}?start=select_${rawGirl.id}`;
+            debugLog(`🔗 Deep link: ${deepLink}`, '#0ff');
+            tg.openTelegramLink(deepLink);
+            debugLog('✅ Fallback openTelegramLink() вызван');
+        } catch (linkError) {
+            debugLog(`❌ Fallback ошибка: ${linkError.message}`, '#f00');
+            alert('❌ Ошибка: ' + linkError.message);
+        }
     }
 }
 
 // =========================================================
 // ОСТАЛЬНЫЕ ФУНКЦИИ
 // =========================================================
+
+function showNotification(text, color = '#4CAF50') {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = text;
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; 
+        background: ${color}; color: white; padding: 12px 20px;
+        border-radius: 8px; z-index: 9999; font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease-out;
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    document.body.removeChild(notification);
+                }
+            }, 300);
+        }
+    }, 2000);
+}
 
 function escapeHtml(value) {
     return String(value || "")
@@ -350,7 +394,7 @@ detailClose?.addEventListener("click", closeDetail);
 detailView?.addEventListener("click", (event) => {
     if (event.target === detailView) closeDetail();
 });
-
+        
 searchInput?.addEventListener("input", applyFilters);
 
 // =========================================================
