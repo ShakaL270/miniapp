@@ -1,50 +1,14 @@
 const tg = window.Telegram?.WebApp;
 
-// Создаем элемент для отладки
-const debugPanel = document.createElement('div');
-debugPanel.id = 'debug-panel';
-debugPanel.style.cssText = `
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.9);
-    color: #0f0;
-    padding: 10px;
-    font-size: 11px;
-    font-family: monospace;
-    max-height: 150px;
-    overflow-y: auto;
-    z-index: 10000;
-    display: none;
-`;
-document.body.appendChild(debugPanel);
-
-function debugLog(message, color = '#0f0') {
-    console.log(message);
-    const line = document.createElement('div');
-    line.style.color = color;
-    line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-    debugPanel.appendChild(line);
-    debugPanel.style.display = 'block';
-    debugPanel.scrollTop = debugPanel.scrollHeight;
-}
-
 if (tg) {
     tg.ready();
     tg.expand();
     tg.enableClosingConfirmation();
-    debugLog('✅ Telegram Web App инициализирован');
-    debugLog(`Platform: ${tg.platform}`);
-    debugLog(`Version: ${tg.version}`);
-    debugLog(`sendData: ${typeof tg.sendData}`);
-    debugLog(`openTelegramLink: ${typeof tg.openTelegramLink}`);
-    debugLog(`initData: ${tg.initData ? '✅ есть' : '❌ нет'}`);
-    if (tg.initDataUnsafe?.user) {
-        debugLog(`User: ${tg.initDataUnsafe.user.first_name} (${tg.initDataUnsafe.user.id})`);
-    }
+    console.log('✅ Telegram Web App инициализирован');
+    console.log('Platform:', tg.platform);
+    console.log('Version:', tg.version);
 } else {
-    debugLog('⚠️ Открыто не в Telegram Web App', '#ff0');
+    console.warn('⚠️ Открыто не в Telegram Web App - режим тестирования');
 }
 
 const user = tg?.initDataUnsafe?.user;
@@ -184,15 +148,13 @@ function buySubscription(subId) {
 
 function selectGirl(rawGirl) {
     if (!rawGirl || !rawGirl.id) {
-        debugLog('❌ Персонаж не найден', '#f00');
         alert('❌ Персонаж не найден');
         return;
     }
     
-    debugLog(`👤 Выбран персонаж: ${rawGirl.id} (${rawGirl.name})`);
+    console.log('👤 Выбран персонаж:', rawGirl.id, rawGirl.name);
     
     if (!tg) {
-        debugLog('❌ Telegram Web App не инициализирован', '#f00');
         alert('❌ Telegram Web App не инициализирован');
         return;
     }
@@ -206,35 +168,31 @@ function selectGirl(rawGirl) {
             girl_name: rawGirl.name
         });
         
-        debugLog(`📤 Payload: ${payload}`, '#0ff');
+        console.log('📤 Payload:', payload);
         
         if (typeof tg.sendData === 'function') {
-            debugLog('✅ Используем sendData()');
+            console.log('✅ Используем sendData()');
             tg.sendData(payload);
-            debugLog('✅ sendData() вызван, ожидание закрытия...');
+            console.log('✅ sendData() вызван');
         } else {
-            debugLog('⚠️ sendData недоступен, используем deep link', '#ff0');
+            console.warn('⚠️ sendData недоступен, используем deep link');
             const botUsername = 'Svinina_bot';
             const deepLink = `https://t.me/${botUsername}?start=select_${rawGirl.id}`;
-            debugLog(`🔗 Deep link: ${deepLink}`, '#0ff');
+            console.log('🔗 Deep link:', deepLink);
             tg.openTelegramLink(deepLink);
-            debugLog('✅ openTelegramLink() вызван');
         }
         
         closeDetail();
     } catch (error) {
-        debugLog(`❌ Ошибка: ${error.message}`, '#f00');
         console.error('❌ Ошибка:', error);
         
         try {
-            debugLog('🔄 Fallback: пробуем deep link', '#ff0');
             const botUsername = 'Svinina_bot';
             const deepLink = `https://t.me/${botUsername}?start=select_${rawGirl.id}`;
-            debugLog(`🔗 Deep link: ${deepLink}`, '#0ff');
+            console.log('🔗 Fallback deep link:', deepLink);
             tg.openTelegramLink(deepLink);
-            debugLog('✅ Fallback openTelegramLink() вызван');
         } catch (linkError) {
-            debugLog(`❌ Fallback ошибка: ${linkError.message}`, '#f00');
+            console.error('❌ Fallback ошибка:', linkError);
             alert('❌ Ошибка: ' + linkError.message);
         }
     }
