@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .btn {
+            width: 100%;
+            padding: 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-test {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-lina {
+            background: #2196F3;
+            color: white;
+        }
+        .btn-kira {
+            background: #9C27B0;
+            color: white;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-line {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #0f0;
+            padding-left: 10px;
+        }
+        .log-error {
+            border-color: #f00;
+            color: #f00;
+        }
+        .log-warn {
+            border-color: #ff0;
+            color: #ff0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Mini App</h1>
+    
+    <button class="btn btn-test" onclick="testInfo()">
+        📊 Показать информацию
+    </button>
+    
+    <button class="btn btn-lina" onclick="selectCharacter('lina', 'Lina')">
+        👤 Выбрать Lina
+    </button>
+    
+    <button class="btn btn-kira" onclick="selectCharacter('kira', 'Kira')">
+        👤 Выбрать Kira
+    </button>
+    
+    <div id="log"></div>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+        const logEl = document.getElementById('log');
+        
+        function addLog(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            if (type === 'error') line.classList.add('log-error');
+            if (type === 'warn') line.classList.add('log-warn');
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+        
+        // Инициализация
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            addLog('✅ Telegram Web App инициализирован');
+        } else {
+            addLog('❌ Telegram Web App НЕ найден', 'error');
+        }
+        
+        function testInfo() {
+            addLog('--- ИНФОРМАЦИЯ О WEB APP ---');
+            
+            if (!tg) {
+                addLog('❌ tg не определен', 'error');
+                return;
+            }
+            
+            addLog(`Platform: ${tg.platform || 'undefined'}`);
+            addLog(`Version: ${tg.version || 'undefined'}`);
+            addLog(`viewportHeight: ${tg.viewportHeight || 'undefined'}`);
+            addLog(`viewportStableHeight: ${tg.viewportStableHeight || 'undefined'}`);
+            addLog(`isExpanded: ${tg.isExpanded}`);
+            addLog(`sendData доступен: ${typeof tg.sendData === 'function' ? '✅ ДА' : '❌ НЕТ'}`, 
+                   typeof tg.sendData === 'function' ? 'info' : 'error');
+            addLog(`openTelegramLink доступен: ${typeof tg.openTelegramLink === 'function' ? '✅ ДА' : '❌ НЕТ'}`);
+            addLog(`openLink доступен: ${typeof tg.openLink === 'function' ? '✅ ДА' : '❌ НЕТ'}`);
+            addLog(`close доступен: ${typeof tg.close === 'function' ? '✅ ДА' : '❌ НЕТ'}`);
+            
+            if (tg.initData) {
+                addLog('✅ initData есть');
+            } else {
+                addLog('❌ initData пустой', 'warn');
+            }
+            
+            if (tg.initDataUnsafe?.user) {
+                addLog(`User: ${tg.initDataUnsafe.user.first_name} (ID: ${tg.initDataUnsafe.user.id})`);
+            } else {
+                addLog('❌ User данные недоступны', 'warn');
+            }
+            
+            addLog('--- КОНЕЦ ИНФОРМАЦИИ ---');
+        }
+        
+        function selectCharacter(girlId, girlName) {
+            addLog(`🎯 Попытка выбрать персонажа: ${girlName} (${girlId})`);
+            
+            if (!tg) {
+                addLog('❌ tg не определен', 'error');
+                alert('❌ Telegram Web App не работает');
+                return;
+            }
+            
+            // Метод 1: sendData
+            if (typeof tg.sendData === 'function') {
+                try {
+                    const data = JSON.stringify({
+                        action: 'select_girl',
+                        girl_id: girlId,
+                        girl_name: girlName
+                    });
+                    addLog(`📤 Метод 1: sendData("${data}")`);
+                    tg.sendData(data);
+                    addLog('✅ sendData вызван успешно');
+                    return;
+                } catch (e) {
+                    addLog(`❌ Ошибка sendData: ${e.message}`, 'error');
+                }
+            } else {
+                addLog('⚠️ sendData недоступен, пробуем deep link', 'warn');
+            }
+            
+            // Метод 2: Deep Link
+            try {
+                const deepLink = `https://t.me/Svinina_bot?start=select_${girlId}`;
+                addLog(`📤 Метод 2: openTelegramLink("${deepLink}")`);
+                tg.openTelegramLink(deepLink);
+                addLog('✅ openTelegramLink вызван успешно');
+            } catch (e) {
+                addLog(`❌ Ошибка openTelegramLink: ${e.message}`, 'error');
+                alert(`❌ Ошибка: ${e.message}`);
+            }
+        }
+        
+        // Автоматически показываем информацию при загрузке
+        setTimeout(() => {
+            testInfo();
+        }, 500);
+    </script>
+</body>
+</html>
