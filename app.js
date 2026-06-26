@@ -30,7 +30,7 @@ let girlsCache = [];
 let currentGirl = null;
 
 if (statusEl) {
-    statusEl.textContent = user?.first_name ? `Hello ${user.first_name}` : "Hello Player";
+    statusEl.textContent = user?.first_name ? `Привет, ${user.first_name}` : "Привет, игрок";
 }
 
 // =========================================================
@@ -254,18 +254,11 @@ function getCharacterQuote(girl) {
 
 function girlAge(girl) {
     if (!girl?.age) return "";
-    return Number.isFinite(Number(girl.age)) ? `${girl.age} years` : String(girl.age);
+    return Number.isFinite(Number(girl.age)) ? `${girl.age} лет` : String(girl.age);
 }
 
 function normalizeGirl(girl) {
-    return {
-        ...girl,
-        name: girl.name_en || girl.name,
-        age: girl.age_en || girl.age,
-        role: girl.role_en || girl.role,
-        type: girl.type_en || girl.type,
-        description: girl.description_en || girl.description,
-    };
+    return girl;
 }
 
 function renderGirls(girls) {
@@ -287,7 +280,7 @@ function renderGirls(girls) {
             ${coverHtml}
             ${girl.type ? `<span class="badge">${escapeHtml(girl.type)}</span>` : ""}
             <div class="card-body">
-                <span class="name">${escapeHtml(girl.name || "Character")}</span>
+                <span class="name">${escapeHtml(girl.name || "Персонаж")}</span>
                 <div class="meta-row">
                     <span>${escapeHtml(girlAge(girl))}</span>
                 </div>
@@ -303,11 +296,11 @@ function openDetail(rawGirl) {
     currentGirl = rawGirl;
     if (!detailView) return;
     detailPhoto.innerHTML = girl.photo_url
-        ? `<img src="${escapeHtml(girl.photo_url)}" alt="${escapeHtml(girl.name || "Character")}">`
+        ? `<img src="${escapeHtml(girl.photo_url)}" alt="${escapeHtml(girl.name || "Персонаж")}">`
         : `<div class="fallback">${escapeHtml((girl.name || "?").slice(0, 1))}</div>`;
     detailType.textContent = girl.type || "";
     detailAge.textContent = girlAge(girl);
-    detailName.textContent = girl.name || "Character";
+    detailName.textContent = girl.name || "Персонаж";
     detailRole.textContent = girl.role || "";
     detailDescription.textContent = getCharacterQuote(girl);
     detailChoose.textContent = `✅ Выбрать ${girl.name || "персонажа"}`;
@@ -327,8 +320,7 @@ function applyFilters() {
     const query = (searchInput?.value || "").trim().toLowerCase();
     const filtered = girlsCache.filter((girl) => {
         const haystack = [
-            girl.name, girl.name_en, girl.role, girl.role_en,
-            girl.description, girl.description_en, girl.type, girl.type_en
+            girl.name, girl.role, girl.description, girl.type
         ].join(" ").toLowerCase();
         return !query || haystack.includes(query);
     });
@@ -364,3 +356,13 @@ renderSubscriptions();
 
 console.log('✅ Mini App загружен');
 console.log('📱 Бот: Svinina_bot');
+console.log('🌐 Версия данных: RU v2.0 - Все описания на русском');
+console.log('📊 Всего персонажей:', window.STATIC_GIRLS?.length || 0);
+if (window.STATIC_GIRLS && window.STATIC_GIRLS[1]) {
+    console.log('👩 Пример (Kira):', {
+        name: window.STATIC_GIRLS[1].name,
+        type: window.STATIC_GIRLS[1].type,
+        role: window.STATIC_GIRLS[1].role,
+        description: window.STATIC_GIRLS[1].description.substring(0, 100)
+    });
+}
