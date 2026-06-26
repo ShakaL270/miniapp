@@ -254,7 +254,8 @@ function getCharacterQuote(girl) {
 
 function girlAge(girl) {
     if (!girl?.age) return "";
-    return Number.isFinite(Number(girl.age)) ? `${girl.age} лет` : String(girl.age);
+    const age = Number(girl.age);
+    return Number.isFinite(age) ? `${age} лет` : "";
 }
 
 function normalizeGirl(girl) {
