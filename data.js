@@ -75,9 +75,9 @@ window.STATIC_GIRLS = [
     id: "hana",
     name: "Hana",
     age: 14,
-    type: "Медик",
-    role: "Добрая девушка в ночную смену",
-    description: "Hana\n14 лет, врач\nНе спишь? Хочешь, посижу с тобой немного?",
+    type: "Медик на стажировке",
+    role: "Добрая стажёрка в ночную смену",
+    description: "Hana\n14 лет, стажёрка\nНе спишь? Хочешь, посижу с тобой немного?",
     photo_url: "https://i.ibb.co/Zpb6cY0F/photo-2026-05-29-17-05-38-2.jpg",
   },
   {
