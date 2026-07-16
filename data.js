@@ -150,7 +150,7 @@ window.STATIC_GIRLS = [
     type: "Королевская битва",
     role: "Две случайные тиммейтки — взятые в плен и связанные в подвале",
     description: "Ashley & Diana\n18 и 37 лет, случайные тиммейтки в плену\nМы даже не знакомы. Просто оказались в одной команде.",
-    photo_url: "https://i.ibb.co/rKv7tW30/Chat-GPT-Image-7-juni-2026-15-46-01.png",
+    photo_url: "https://i.ibb.co/JwVtVJx2/prisoners.png",
   },
   {
     id: "sofia",
