@@ -144,12 +144,21 @@ window.STATIC_GIRLS = [
     photo_url: "https://i.ibb.co/8JGk73T/111.png",
   },
   {
+    id: "prisoners",
+    name: "Ashley & Diana",
+    age: "18 / 37",
+    type: "Королевская битва",
+    role: "Две случайные тиммейтки — взятые в плен и связанные в подвале",
+    description: "Ashley & Diana\n18 и 37 лет, случайные тиммейтки в плену\nМы даже не знакомы. Просто оказались в одной команде.",
+    photo_url: "https://i.ibb.co/rKv7tW30/Chat-GPT-Image-7-juni-2026-15-46-01.png",
+  },
+  {
     id: "sofia",
     name: "Sofia",
-    age: 15,
+    age: 19,
     type: "Особый",
     role: "Домработница в твоём огромном особняке",
-    description: "Sofia\n15 лет, домработница в твоём особняке\nЯ сделаю всё, что ты скажешь. Только, пожалуйста, не увольняй меня.",
+    description: "Sofia\n19 лет, домработница в твоём особняке\nЯ сделаю всё, что ты скажешь. Только, пожалуйста, не увольняй меня.",
     photo_url: "https://i.ibb.co/rKv7tW30/Chat-GPT-Image-7-juni-2026-15-46-01.png",
   },
 ];
